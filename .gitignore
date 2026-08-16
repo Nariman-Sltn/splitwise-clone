@@ -1,0 +1,17 @@
+# Virtual Environment
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+*.log
+
+# Environment variables (اگه بعدا رمز/کلید تو یه فایل جدا گذاشتی)
+.env
+
+# VSCode
+.vscode/
