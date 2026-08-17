@@ -1,0 +1,15 @@
+<h2>{{ group.name }}</h2>
+
+<h3>اعضا:</h3>
+<ul>
+    {% for membership in members %}
+        <li>
+            {{ membership.user.username }}
+            {% if membership.user == group.created_by %}
+                (سازنده)
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'home' %}">بازگشت</a>
