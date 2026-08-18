@@ -1,3 +1,7 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+
 <h2>خوش اومدی، {{ user.username }} 😉</h2>
 
 <ul>
@@ -18,3 +22,6 @@
     {% csrf_token %}
     <button type="submit">خروج</button>
 </form>
+
+
+{% endblock %}

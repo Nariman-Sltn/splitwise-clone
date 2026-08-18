@@ -1,3 +1,7 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+
 <h2>{{ group.name }}</h2>
 
 <h3>اعضا:</h3>
@@ -12,4 +16,55 @@
     {% endfor %}
 </ul>
 
-<a href="{% url 'home' %}">بازگشت</a>
+<h3>هزینه‌ها:</h3>
+<ul>
+    {% for expense in expenses %}
+        <li>
+            <strong>{{ expense.title }}</strong> - {{ expense.amount }} تومن
+            (پرداخت‌کننده: {{ expense.paid_by.username }})
+            <ul>
+                {% for split in expense.splits.all %}
+                    <li>{{ split.user.username }}: {{ split.amount }} تومن</li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% empty %}
+        <li>هنوز هزینه‌ای ثبت نشده.</li>
+    {% endfor %}
+</ul>
+
+
+<h3>وضعیت حساب هرکس:</h3>
+<ul>
+    {% for user, balance in balances.items %}
+        <li>
+            {{ user.username }}:
+            {% if balance > 0 %}
+                {{ balance }} تومن طلبکاره
+            {% elif balance < 0 %}
+                {{ balance }} تومن بدهکاره
+            {% else %}
+                حسابش صافه
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+<h3>پیشنهاد تسویه (کمترین تراکنش):</h3>
+<ul>
+    {% for t in transactions %}
+        <li>{{ t.from.username }} باید {{ t.amount }} تومن به {{ t.to.username }} بده</li>
+    {% empty %}
+        <li>همه‌چیز صافه!</li>
+    {% endfor %}
+</ul>
+
+
+<li>
+    <a href="{% url 'create_expense' group.id %}">ثبت هزینه‌ی جدید</a>
+    <a> / </a>
+    <a href="{% url 'home' %}">بازگشت</a>
+</li>
+
+
+{% endblock %}

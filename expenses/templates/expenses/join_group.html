@@ -1,3 +1,7 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+
 {% if messages %}
     {% for message in messages %}
         <p style="color: red;">{{ message }}</p>
@@ -10,3 +14,6 @@
     {{ form.as_p }}
     <button type="submit">پیوستن</button>
 </form>
+
+
+{% endblock %}

@@ -3,6 +3,7 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
+    path('groups/<int:group_id>/expenses/create/', views.create_expense_view, name='create_expense'),
     path('groups/<int:group_id>/', views.group_detail_view, name='group_detail'),
     path('groups/create/', views.create_group_view, name='create_group'),
     path('groups/join/', views.join_group_view, name='join_group'),

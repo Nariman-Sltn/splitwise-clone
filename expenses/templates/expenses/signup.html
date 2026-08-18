@@ -1,6 +1,15 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+
 <h2>ثبت‌نام</h2>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">ثبت‌نام</button>
 </form>
+
+<p>قبلاً حساب ساختی؟ <a href="{% url 'login' %}">اینجا وارد شو</a></p>
+
+
+{% endblock %}

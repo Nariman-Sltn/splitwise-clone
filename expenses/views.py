@@ -6,6 +6,11 @@ from .forms import GroupCreateForm, GroupJoinForm
 from .models import Group, GroupMembership
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseForbidden
+from .forms import ExpenseCreateForm
+from .models import Expense, ExpenseSplit
+from decimal import Decimal
+from .services import calculate_group_balances, simplify_debts
+
 
 def signup_view(request):   
     if request.method == 'POST':
@@ -73,8 +78,61 @@ def group_detail_view(request, group_id):
         return HttpResponseForbidden("شما عضو این گروه نیستید.")
 
     members = GroupMembership.objects.filter(group=group).select_related('user')
+    expenses = Expense.objects.filter(group=group).select_related('paid_by').prefetch_related('splits__user')
+
+    balances = calculate_group_balances(group)
+    transactions = simplify_debts(balances)
 
     return render(request, 'expenses/group_detail.html', {
         'group': group,
         'members': members,
+        'expenses': expenses,
+        'balances': balances,
+        'transactions': transactions,
     })
+
+@login_required
+def create_expense_view(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+    is_member = GroupMembership.objects.filter(group=group, user=request.user).exists()
+    if not is_member:
+        return HttpResponseForbidden("شما عضو این گروه نیستید.")
+
+    if request.method == 'POST':
+        form = ExpenseCreateForm(request.POST, group=group)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            amount = form.cleaned_data['amount']
+            paid_by = form.cleaned_data['paid_by']
+            participants = form.cleaned_data['participants']
+
+            expense = Expense.objects.create(
+                group=group,
+                title=title,
+                amount=amount,
+                paid_by=paid_by,
+            )
+
+            count = participants.count()
+            share = (amount / count).quantize(Decimal('0.01'))
+            total_assigned = Decimal('0.00')
+
+            participant_list = list(participants)
+            for i, user in enumerate(participant_list):
+                if i == len(participant_list) - 1:
+                    this_share = amount - total_assigned
+                else:
+                    this_share = share
+                    total_assigned += share
+
+                ExpenseSplit.objects.create(
+                    expense=expense,
+                    user=user,
+                    amount=this_share,
+                )
+
+            return redirect('group_detail', group_id=group.id)
+    else:
+        form = ExpenseCreateForm(group=group)
+
+    return render(request, 'expenses/create_expense.html', {'form': form, 'group': group})

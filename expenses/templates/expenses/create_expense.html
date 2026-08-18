@@ -1,0 +1,15 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+
+<h2>ثبت هزینه‌ی جدید در {{ group.name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">ثبت هزینه</button>
+</form>
+
+<a href="{% url 'group_detail' group.id %}">بازگشت</a>
+
+
+{% endblock %}
