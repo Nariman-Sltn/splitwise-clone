@@ -9,6 +9,9 @@ class Group(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_groups')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('created_by', 'name')
+
     def set_password(self, raw_password):
         self.password_hash = make_password(raw_password)
 

@@ -33,18 +33,23 @@ def create_group_view(request):
     if request.method == 'POST':
         form = GroupCreateForm(request.POST)
         if form.is_valid():
-            group = Group(
-                name=form.cleaned_data['name'],
-                created_by=request.user
-            )
-            group.set_password(form.cleaned_data['password'])
+            name = form.cleaned_data['name']
+            password = form.cleaned_data['password']
+
+            existing_same_name = Group.objects.filter(name=name)
+            for g in existing_same_name:
+                if g.check_password(password):
+                    form.add_error(None, 'لطفاً اسم یا رمز رو عوض کن!!!')
+                    return render(request, 'expenses/create_group.html', {'form': form})
+
+            group = Group(name=name, created_by=request.user)
+            group.set_password(password)
             group.save()
             GroupMembership.objects.create(group=group, user=request.user)
             return redirect('home')
     else:
         form = GroupCreateForm()
     return render(request, 'expenses/create_group.html', {'form': form})
-
 
 @login_required
 def join_group_view(request):
@@ -53,21 +58,24 @@ def join_group_view(request):
         if form.is_valid():
             name = form.cleaned_data['name']
             password = form.cleaned_data['password']
-            try:
-                group = Group.objects.get(name=name)
-            except Group.DoesNotExist:
-                messages.error(request, 'گروهی با این اسم پیدا نشد.')
+
+            candidate_groups = Group.objects.filter(name=name)
+            matched_group = None
+            for g in candidate_groups:
+                if g.check_password(password):
+                    matched_group = g
+                    break
+
+            if matched_group is None:
+                messages.error(request, 'اسم یا رمز گروه اشتباهه.')
                 return render(request, 'expenses/join_group.html', {'form': form})
 
-            if not group.check_password(password):
-                messages.error(request, 'رمز گروه اشتباهه.')
-                return render(request, 'expenses/join_group.html', {'form': form})
-
-            GroupMembership.objects.get_or_create(group=group, user=request.user)
+            GroupMembership.objects.get_or_create(group=matched_group, user=request.user)
             return redirect('home')
     else:
         form = GroupJoinForm()
     return render(request, 'expenses/join_group.html', {'form': form})
+
 
 @login_required
 def group_detail_view(request, group_id):
