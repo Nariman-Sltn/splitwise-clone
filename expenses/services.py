@@ -1,5 +1,6 @@
 from collections import defaultdict
 from .models import Expense, ExpenseSplit
+from .models import Expense, ExpenseSplit, Settlement
 
 
 def calculate_group_balances(group):
@@ -17,6 +18,11 @@ def calculate_group_balances(group):
     splits = ExpenseSplit.objects.filter(expense__group=group).select_related('user')
     for split in splits:
         balances[split.user] -= split.amount
+
+    settlements = Settlement.objects.filter(group=group).select_related('paid_by', 'paid_to')
+    for settlement in settlements:
+        balances[settlement.paid_by] += settlement.amount
+        balances[settlement.paid_to] -= settlement.amount
 
     return dict(balances)
 

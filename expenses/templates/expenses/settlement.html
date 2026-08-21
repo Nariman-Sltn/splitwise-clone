@@ -5,12 +5,13 @@
     <div class="col-md-5">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h4 class="card-title mb-4">پیوستن به گروه</h4>
+                <h4 class="card-title mb-4">ثبت پرداخت در گروه : {{ group.name }}</h4>
                 <form method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success">پیوستن</button>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">ثبت پرداخت</button>
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-outline-secondary">بازگشت</a>
                     </div>
                 </form>
             </div>

@@ -1,70 +1,121 @@
 {% extends 'expenses/base.html' %}
 {% block content %}
 
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>{{ group.name }}</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'create_expense' group.id %}" class="btn btn-success btn-sm">+ ثبت هزینه</a>
+        <a href="{% url 'settlement' group.id %}" class="btn btn-outline-success btn-sm">ثبت پرداخت</a>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">بازگشت</a>
+    </div>
+</div>
 
-<h2>{{ group.name }}</h2>
+<div class="row g-4">
 
-<h3>اعضا:</h3>
-<ul>
-    {% for membership in members %}
-        <li>
-            {{ membership.user.username }}
-            {% if membership.user == group.created_by %}
-                (سازنده)
-            {% endif %}
-        </li>
-    {% endfor %}
-</ul>
-
-<h3>هزینه‌ها:</h3>
-<ul>
-    {% for expense in expenses %}
-        <li>
-            <strong>{{ expense.title }}</strong> - {{ expense.amount }} تومن
-            (پرداخت‌کننده: {{ expense.paid_by.username }})
-            <ul>
-                {% for split in expense.splits.all %}
-                    <li>{{ split.user.username }}: {{ split.amount }} تومن</li>
+    <!-- اعضا -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">اعضا</div>
+            <ul class="list-group list-group-flush">
+                {% for membership in members %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        {{ membership.user.username }}
+                        {% if membership.user == group.created_by %}
+                            <span class="badge bg-success">سازنده</span>
+                        {% endif %}
+                    </li>
                 {% endfor %}
             </ul>
-        </li>
-    {% empty %}
-        <li>هنوز هزینه‌ای ثبت نشده.</li>
-    {% endfor %}
-</ul>
+        </div>
+    </div>
 
+    <!-- وضعیت حساب -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">وضعیت حساب</div>
+            <ul class="list-group list-group-flush">
+                {% for user, balance in balances.items %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        {{ user.username }}
+                        {% if balance > 0 %}
+                            <span class="text-success">{{ balance }}+ تومن طلبکار</span>
+                        {% elif balance < 0 %}
+                            <span class="text-danger">{{ balance }} تومن بدهکار</span>
+                        {% else %}
+                            <span class="text-muted">صفر</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
-<h3>وضعیت حساب هرکس:</h3>
-<ul>
-    {% for user, balance in balances.items %}
-        <li>
-            {{ user.username }}:
-            {% if balance > 0 %}
-                {{ balance }} تومن طلبکاره
-            {% elif balance < 0 %}
-                {{ balance }} تومن بدهکاره
-            {% else %}
-                حسابش صافه
-            {% endif %}
-        </li>
-    {% endfor %}
-</ul>
+    <!-- پیشنهاد تسویه -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">پیشنهاد تسویه</div>
+            <ul class="list-group list-group-flush">
+                {% for t in transactions %}
+                    <li class="list-group-item" dir="ltr" style="text-align: right;">
+                    </strong>( {{ t.amount }} تومن )</strong>
+                        <strong>{{ t.to.username }}← <strong>{{ t.from.username }}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">همه‌چیز صافه!</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
-<h3>پیشنهاد تسویه (کمترین تراکنش):</h3>
-<ul>
-    {% for t in transactions %}
-        <li>{{ t.from.username }} باید {{ t.amount }} تومن به {{ t.to.username }} بده</li>
-    {% empty %}
-        <li>همه‌چیز صافه!</li>
-    {% endfor %}
-</ul>
+    <!-- هزینه‌ها -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">هزینه‌ها</div>
+            <ul class="list-group list-group-flush">
+                {% for expense in expenses %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ expense.title }}</strong>
+                            <span>{{ expense.amount }} تومن — پرداخت‌کننده: {{ expense.paid_by.username }}</span>
+                        </div>
+                        <ul class="mt-1 mb-0 text-muted small">
+                            {% for split in expense.splits.all %}
+                                <li>{{ split.user.username }}: {{ split.amount }} تومن</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">هنوز هزینه‌ای ثبت نشده.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
+    <!-- تاریخچه -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">تاریخچه فعالیت‌ها</div>
+            <ul class="list-group list-group-flush">
+                {% for log in activity_logs %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            {{ log.message }}
+                            <small class="text-muted me-2">{{ log.created_at|date:"Y/m/d H:i" }}</small>
+                        </span>
+                        {% if request.user == group.created_by %}
+                            <form method="post" action="{% url 'delete_log' log.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">حذف</button>
+                            </form>
+                        {% endif %}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">هنوز فعالیتی ثبت نشده.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
-<li>
-    <a href="{% url 'create_expense' group.id %}">ثبت هزینه‌ی جدید</a>
-    <a> / </a>
-    <a href="{% url 'home' %}">بازگشت</a>
-</li>
-
+</div>
 
 {% endblock %}

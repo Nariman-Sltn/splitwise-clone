@@ -10,16 +10,20 @@ from .forms import ExpenseCreateForm
 from .models import Expense, ExpenseSplit
 from decimal import Decimal
 from .services import calculate_group_balances, simplify_debts
+from .utils import log_activity
+from .forms import GroupCreateForm, GroupJoinForm, ExpenseCreateForm, SettlementForm
+from .models import Group, GroupMembership, Expense, ExpenseSplit, Settlement
+from .forms import FarsiUserCreationForm
 
 
 def signup_view(request):   
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = FarsiUserCreationForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('login')
     else:
-        form = UserCreationForm()
+        form = FarsiUserCreationForm()
     return render(request, 'expenses/signup.html', {'form': form})
 
 @login_required
@@ -46,6 +50,7 @@ def create_group_view(request):
             group.set_password(password)
             group.save()
             GroupMembership.objects.create(group=group, user=request.user)
+            log_activity(group, request.user, f"گروه '{group.name}' توسط {request.user.username} ساخته شد.")
             return redirect('home')
     else:
         form = GroupCreateForm()
@@ -70,7 +75,9 @@ def join_group_view(request):
                 messages.error(request, 'اسم یا رمز گروه اشتباهه.')
                 return render(request, 'expenses/join_group.html', {'form': form})
 
-            GroupMembership.objects.get_or_create(group=matched_group, user=request.user)
+            membership, created = GroupMembership.objects.get_or_create(group=matched_group, user=request.user)
+            if created:
+                log_activity(matched_group, request.user, f"{request.user.username} به گروه پیوست.")
             return redirect('home')
     else:
         form = GroupJoinForm()
@@ -87,16 +94,18 @@ def group_detail_view(request, group_id):
 
     members = GroupMembership.objects.filter(group=group).select_related('user')
     expenses = Expense.objects.filter(group=group).select_related('paid_by').prefetch_related('splits__user')
+    activity_logs = group.activity_logs.all()
 
     balances = calculate_group_balances(group)
     transactions = simplify_debts(balances)
 
     return render(request, 'expenses/group_detail.html', {
-        'group': group,
-        'members': members,
-        'expenses': expenses,
-        'balances': balances,
-        'transactions': transactions,
+    'group': group,
+    'members': members,
+    'expenses': expenses,
+    'balances': balances,
+    'transactions': transactions,
+    'activity_logs': activity_logs,
     })
 
 @login_required
@@ -138,9 +147,51 @@ def create_expense_view(request, group_id):
                     user=user,
                     amount=this_share,
                 )
-
+            log_activity(group, request.user, f"{request.user.username} هزینه '{title}' به مبلغ {amount} اضافه کرد.")
             return redirect('group_detail', group_id=group.id)
     else:
         form = ExpenseCreateForm(group=group)
 
     return render(request, 'expenses/create_expense.html', {'form': form, 'group': group})
+
+@login_required
+def settlement_view(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+    is_member = GroupMembership.objects.filter(group=group, user=request.user).exists()
+    if not is_member:
+        return HttpResponseForbidden("شما عضو این گروه نیستید.")
+
+    if request.method == 'POST':
+        form = SettlementForm(request.POST, group=group, user=request.user)
+        if form.is_valid():
+            paid_to = form.cleaned_data['paid_to']
+            amount = form.cleaned_data['amount']
+
+            Settlement.objects.create(
+                group=group,
+                paid_by=request.user,
+                paid_to=paid_to,
+                amount=amount,
+            )
+
+            log_activity(group, request.user, f"{request.user.username} مبلغ {amount} تومن به {paid_to.username} پرداخت کرد.")
+            return redirect('group_detail', group_id=group.id)
+    else:
+        form = SettlementForm(group=group, user=request.user)
+
+    return render(request, 'expenses/settlement.html', {'form': form, 'group': group})
+
+from .models import Group, GroupMembership, Expense, ExpenseSplit, Settlement, ActivityLog
+
+@login_required
+def delete_log_view(request, log_id):
+    log = get_object_or_404(ActivityLog, id=log_id)
+    
+    if request.user != log.group.created_by:
+        return HttpResponseForbidden("فقط سازنده گروه می‌تونه لاگ حذف کنه.")
+    
+    group_id = log.group.id
+    if request.method == 'POST':
+        log.delete()
+    
+    return redirect('group_detail', group_id=group_id)

@@ -55,3 +55,26 @@ class ExpenseSplit(models.Model):
 
     def __str__(self):
         return f"{self.user.username} owes {self.amount} for {self.expense.title}"
+
+
+class ActivityLog(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='activity_logs')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs')
+    message = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.message}"
+
+class Settlement(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='settlements')
+    paid_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='settlements_paid')
+    paid_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='settlements_received')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.paid_by.username} paid {self.amount} to {self.paid_to.username}"

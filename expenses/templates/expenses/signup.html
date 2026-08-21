@@ -1,15 +1,51 @@
 {% extends 'expenses/base.html' %}
 {% block content %}
 
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h4 class="card-title mb-4 text-center">ثبت‌نام</h4>
+                <form method="post">
+                    {% csrf_token %}
 
-<h2>ثبت‌نام</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">ثبت‌نام</button>
-</form>
+                    <div class="mb-3">
+                        <label class="form-label">نام کاربری</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
 
-<p>قبلاً حساب ساختی؟ <a href="{% url 'login' %}">اینجا وارد شو</a></p>
+                    <div class="mb-3">
+                        <label class="form-label">رمز عبور</label>
+                        <input type="password" name="password1" class="form-control" required>
+                    </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">تکرار رمز عبور</label>
+                        <input type="password" name="password2" class="form-control" required>
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">ثبت‌نام</button>
+                    </div>
+                </form>
+                <hr>
+                <p class="text-center mb-0">قبلاً حساب ساختی؟ <a href="{% url 'login' %}">اینجا وارد شو</a></p>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

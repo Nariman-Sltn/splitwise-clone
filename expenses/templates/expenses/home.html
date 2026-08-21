@@ -1,27 +1,33 @@
 {% extends 'expenses/base.html' %}
 {% block content %}
 
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>خوش اومدی، {{ user.username }} 😉</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'create_group' %}" class="btn btn-success">+ ساخت گروه</a>
+        <a href="{% url 'join_group' %}" class="btn btn-outline-success">پیوستن به گروه</a>
+    </div>
+</div>
 
-<h2>خوش اومدی، {{ user.username }} 😉</h2>
+<h5 class="mb-3">گروه‌های من:</h5>
 
-<ul>
-    <li><a href="{% url 'create_group' %}">ساخت گروه</a></li>
-    <li><a href="{% url 'join_group' %}">پیوستن به گروه</a></li>
-</ul>
-
-<h3>گروه‌های من:</h3>
-<ul>
-    {% for group in groups %}
-        <li><a href="{% url 'group_detail' group.id %}">{{ group.name }}</a></li>
-    {% empty %}
-        <li>هنوز عضو هیچ گروهی نیستی.</li>
-    {% endfor %}
-</ul>
-
-<form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">خروج</button>
-</form>
-
+{% if groups %}
+    <div class="row g-3">
+        {% for group in groups %}
+            <div class="col-md-4">
+                <a href="{% url 'group_detail' group.id %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 border-0">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">{{ group.name }}</h5>
+                            <p class="text-muted mb-0 small">مشاهده جزئیات</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-secondary">هنوز عضو هیچ گروهی نیستی.</div>
+{% endif %}
 
 {% endblock %}
