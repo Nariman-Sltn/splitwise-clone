@@ -1,0 +1,24 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm border-danger">
+            <div class="card-body p-4 text-center">
+                <div style="font-size:3rem;">⚠️</div>
+                <h5 class="fw-bold mt-3 text-danger">حذف حساب کاربری</h5>
+                <p class="text-muted">با حذف حساب، همه هزینه‌ها و اطلاعاتت پاک میشه. اگه سازنده گروهی باشی، سازندگی به عضو بعدی منتقل میشه.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('مطمئنی؟ این کار برگشت‌پذیر نیست!')">
+                        🗑 حذف حساب
+                    </button>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary me-2">انصراف</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}  

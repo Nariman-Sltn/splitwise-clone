@@ -3,6 +3,11 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
+    path('account/delete/', views.delete_account_view, name='delete_account'),
+    path('groups/<int:group_id>/delete/', views.delete_group_view, name='delete_group'),
+    path('groups/<int:group_id>/leave/', views.leave_group_view, name='leave_group'),
+    path('expenses/<int:expense_id>/edit/', views.edit_expense_view, name='edit_expense'),
+    path('expenses/<int:expense_id>/delete/', views.delete_expense_view, name='delete_expense'),
     path('logs/<int:log_id>/delete/', views.delete_log_view, name='delete_log'),
     path('groups/<int:group_id>/settle/', views.settlement_view, name='settlement'),
     path('groups/<int:group_id>/expenses/create/', views.create_expense_view, name='create_expense'),

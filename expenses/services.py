@@ -1,7 +1,7 @@
 from collections import defaultdict
 from .models import Expense, ExpenseSplit
 from .models import Expense, ExpenseSplit, Settlement
-
+from decimal import Decimal
 
 def calculate_group_balances(group):
     """
@@ -62,9 +62,11 @@ def simplify_debts(balances):
         debtors[i][1] -= payment
         creditors[j][1] -= payment
 
-        if debtors[i][1] == 0:
+        ZERO = Decimal('0.00')
+        # توی simplify_debts جایی که == 0 داری:
+        if debtors[i][1] <= ZERO:
             i += 1
-        if creditors[j][1] == 0:
+        if creditors[j][1] <= ZERO:
             j += 1
 
     return transactions

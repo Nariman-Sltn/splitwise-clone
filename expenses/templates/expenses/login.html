@@ -1,20 +1,34 @@
 {% extends 'expenses/base.html' %}
 {% block content %}
 
-<div class="row justify-content-center">
+<div class="row justify-content-center mt-4">
     <div class="col-md-4">
-        <div class="card shadow-sm mt-5">
+        <div class="text-center mb-4">
+            <div style="font-size:2.5rem;">💰</div>
+            <h4 class="fw-bold mt-2">ورود به Splitwise</h4>
+            <small class="text-muted">دنگ‌هاتو با دوستات تقسیم کن...</small>
+        </div>
+        <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <h4 class="card-title text-center mb-4">ورود</h4>
                 <form method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">نام کاربری</label>
+                        <input type="text" name="username" class="form-control" placeholder="نام کاربریت رو وارد کن" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">رمز عبور</label>
+                        <input type="password" name="password" class="form-control" placeholder="رمز عبور" required>
+                    </div>
+                    {% if form.errors %}
+                        <div class="alert alert-danger small py-2">نام کاربری یا رمز عبور اشتباهه.</div>
+                    {% endif %}
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success">ورود</button>
                     </div>
                 </form>
-                <hr>
-                <p class="text-center mb-0">حساب نداری؟ <a href="{% url 'signup' %}">اینجا ثبت‌نام کن</a></p>
+                <hr class="my-3">
+                <p class="text-center mb-0 small">حساب نداری؟ <a href="{% url 'signup' %}" class="text-success fw-bold">ثبت‌نام کن</a></p>
             </div>
         </div>
     </div>

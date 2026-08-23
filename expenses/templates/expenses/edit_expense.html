@@ -1,0 +1,26 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <h5 class="fw-bold mb-0">ویرایش هزینه — {{ expense.title }}</h5>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-outline-secondary btn-sm">← بازگشت</a>
+                        <button type="submit" class="btn btn-success"
+                        onclick="return confirm('این هزینه ویرایش بشه؟')">
+                        ✏️ ذخیره تغییرات</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

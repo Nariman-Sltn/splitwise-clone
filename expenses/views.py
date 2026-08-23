@@ -14,14 +14,15 @@ from .utils import log_activity
 from .forms import GroupCreateForm, GroupJoinForm, ExpenseCreateForm, SettlementForm
 from .models import Group, GroupMembership, Expense, ExpenseSplit, Settlement
 from .forms import FarsiUserCreationForm
+from django.contrib.auth import login
 
-
-def signup_view(request):   
+def signup_view(request):
     if request.method == 'POST':
         form = FarsiUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('login')
+            user = form.save()
+            login(request, user)
+            return redirect('home')
     else:
         form = FarsiUserCreationForm()
     return render(request, 'expenses/signup.html', {'form': form})
@@ -88,7 +89,6 @@ def join_group_view(request):
 def group_detail_view(request, group_id):
     group = get_object_or_404(Group, id=group_id)
     is_member = GroupMembership.objects.filter(group=group, user=request.user).exists()
-
     if not is_member:
         return HttpResponseForbidden("شما عضو این گروه نیستید.")
 
@@ -98,6 +98,7 @@ def group_detail_view(request, group_id):
 
     balances = calculate_group_balances(group)
     transactions = simplify_debts(balances)
+    settlements = Settlement.objects.filter(group=group).select_related('paid_by', 'paid_to')
 
     return render(request, 'expenses/group_detail.html', {
     'group': group,
@@ -106,7 +107,8 @@ def group_detail_view(request, group_id):
     'balances': balances,
     'transactions': transactions,
     'activity_logs': activity_logs,
-    })
+    'settlements': settlements,
+})
 
 @login_required
 def create_expense_view(request, group_id):
@@ -132,20 +134,16 @@ def create_expense_view(request, group_id):
 
             count = participants.count()
             share = (amount / count).quantize(Decimal('0.01'))
-            total_assigned = Decimal('0.00')
+            actual_total = share * count
 
-            participant_list = list(participants)
-            for i, user in enumerate(participant_list):
-                if i == len(participant_list) - 1:
-                    this_share = amount - total_assigned
-                else:
-                    this_share = share
-                    total_assigned += share
+            expense.amount = actual_total
+            expense.save()
 
+            for user in participants:
                 ExpenseSplit.objects.create(
                     expense=expense,
                     user=user,
-                    amount=this_share,
+                    amount=share,
                 )
             log_activity(group, request.user, f"{request.user.username} هزینه '{title}' به مبلغ {amount} اضافه کرد.")
             return redirect('group_detail', group_id=group.id)
@@ -195,3 +193,124 @@ def delete_log_view(request, log_id):
         log.delete()
     
     return redirect('group_detail', group_id=group_id)
+
+@login_required
+def delete_expense_view(request, expense_id):
+    expense = get_object_or_404(Expense, id=expense_id)
+    group = expense.group
+
+    if request.user != expense.paid_by and request.user != group.created_by:
+        return HttpResponseForbidden("شما اجازه حذف این هزینه رو ندارید.")
+
+    group_id = group.id
+    if request.method == 'POST':
+        log_activity(group, request.user, f"هزینه '{expense.title}' حذف شد.")
+        expense.delete()
+
+    return redirect('group_detail', group_id=group_id)
+
+@login_required
+def edit_expense_view(request, expense_id):
+    expense = get_object_or_404(Expense, id=expense_id)
+    group = expense.group
+
+    if request.user != expense.paid_by and request.user != group.created_by:
+        return HttpResponseForbidden("شما اجازه ویرایش این هزینه رو ندارید.")
+
+    if request.method == 'POST':
+        form = ExpenseCreateForm(request.POST, group=group)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            amount = form.cleaned_data['amount']
+            paid_by = form.cleaned_data['paid_by']
+            participants = form.cleaned_data['participants']
+
+            expense.title = title
+            expense.amount = amount
+            expense.paid_by = paid_by
+            expense.save()
+
+            expense.splits.all().delete()
+
+            count = participants.count()
+            share = (amount / count).quantize(Decimal('0.01'))
+            actual_total = share * count
+
+            expense.amount = actual_total
+            expense.save()
+
+            for user in participants:
+                ExpenseSplit.objects.create(
+                    expense=expense,
+                    user=user,
+                    amount=share,
+                )
+
+            log_activity(group, request.user, f"هزینه '{title}' ویرایش شد.")
+            return redirect('group_detail', group_id=group.id)
+    else:
+        form = ExpenseCreateForm(group=group, initial={
+            'title': expense.title,
+            'amount': expense.amount,
+            'paid_by': expense.paid_by,
+            'participants': expense.splits.values_list('user', flat=True),
+        })
+
+    return render(request, 'expenses/edit_expense.html', {'form': form, 'group': group, 'expense': expense})
+
+@login_required
+def leave_group_view(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+
+    if request.user == group.created_by:
+        messages.error(request, 'سازنده گروه نمی‌تونه از گروه بره بیره.')
+        return redirect('group_detail', group_id=group_id)
+
+    if request.method == 'POST':
+        GroupMembership.objects.filter(group=group, user=request.user).delete()
+        log_activity(group, request.user, f"{request.user.username} از گروه خارج شد.")
+        return redirect('home')
+
+    return redirect('group_detail', group_id=group_id)
+
+@login_required
+def delete_group_view(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+
+    if request.user != group.created_by:
+        return HttpResponseForbidden("فقط سازنده گروه می‌تونه اون رو حذف کنه.")
+
+    if request.method == 'POST':
+        group.delete()
+        return redirect('home')
+
+    return redirect('group_detail', group_id=group_id)
+
+from django.contrib.auth import logout
+
+@login_required
+def delete_account_view(request):
+    if request.method == 'POST':
+        user = request.user
+
+        # گروه‌هایی که سازنده‌شه
+        created_groups = Group.objects.filter(created_by=user)
+        for group in created_groups:
+            # اولین عضو دیگه بعد از خودش
+            next_member = GroupMembership.objects.filter(group=group).exclude(user=user).order_by('joined_at').first()
+
+            if next_member:
+                # سازندگی رو منتقل کن
+                group.created_by = next_member.user
+                group.save()
+                log_activity(group, next_member.user, f"سازندگی گروه به {next_member.user.username} منتقل شد.")
+            else:
+                # گروه خالیه، حذف بشه
+                group.delete()
+
+        # حذف همه چیز مربوط به کاربر
+        logout(request)
+        user.delete()
+        return redirect('signup')
+
+    return render(request, 'expenses/delete_account.html')
