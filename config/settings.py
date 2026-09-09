@@ -84,11 +84,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #}
 import dj_database_url
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        env='POSTGRES_URL',
-        conn_max_age=600,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.kwzjafyyodtibsnqonmi',
+        'PASSWORD': 'پسورد جدیدت',
+        'HOST': 'aws-0-ap-southeast-2.pooler.supabase.com',
+        'PORT': '5432',
+    }
 }
 
 # Password validation
