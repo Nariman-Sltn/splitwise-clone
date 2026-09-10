@@ -1,20 +1,22 @@
 # 💰 Splitwise Clone
 
-A full-featured expense splitting web application built with Django — inspired by Splitwise.
+A web application for splitting expenses among groups of people, inspired by Splitwise.
 
-🔗 **Live Demo:** [narimansltn.pythonanywhere.com](https://narimansltn.pythonanywhere.com)
+🔗 **Live Demo:** [splitwise-clone-sepia.vercel.app](https://splitwise-clone-sepia.vercel.app)
+📁 **GitHub:** [github.com/Nariman-Sltn/splitwise-clone](https://github.com/Nariman-Sltn/splitwise-clone)
 
 ---
 
 ## ✨ Features
 
-- **User Authentication** — Signup, login, logout, and account deletion
+- **User Authentication** — Sign up, log in, log out, and delete account
 - **Group Management** — Create groups with passwords, join existing groups, leave or delete groups
 - **Expense Tracking** — Add, edit, and delete expenses with equal splitting among participants
-- **Debt Simplification** — Greedy algorithm to minimize the number of transactions needed to settle all debts
-- **Settlement System** — Record payments between members and automatically update balances
-- **Activity Log** — Full history of group activity, with admin delete control
-- **Responsive UI** — Clean Bootstrap RTL interface
+- **Debt Simplification** — Greedy algorithm to minimize the number of transactions needed to settle debts
+- **Settlement System** — Record payments between members and update balances in real time
+- **Activity Log** — Track all group activity with a filterable history
+- **Ownership Transfer** — When a group owner leaves, ownership transfers to the next member automatically
+- **RTL Support** — Full Persian (Farsi) UI support with Bootstrap RTL
 
 ---
 
@@ -22,20 +24,31 @@ A full-featured expense splitting web application built with Django — inspired
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Django 6.1 |
-| Database | SQLite |
-| Frontend | Bootstrap 5 (RTL) |
-| Auth | Django built-in authentication |
-| Deployment | PythonAnywhere |
+| Backend | Python 3.13 + Django 5.x |
+| Database | PostgreSQL (Supabase) |
+| Frontend | Bootstrap 5 RTL |
+| Deployment | Vercel |
+| Version Control | Git + GitHub |
 
 ---
 
-## ⚙️ Local Setup
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.12+
+- pip
+
+### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/Nariman-Sltn/splitwise-clone.git
 cd splitwise-clone
+
+# Create virtual environment
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Mac/Linux
 
 # Install dependencies
 pip install -r requirements.txt
@@ -47,8 +60,6 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Then open [http://localhost:8000](http://localhost:8000)
-
 ---
 
 ## 🧪 Running Tests
@@ -57,11 +68,9 @@ Then open [http://localhost:8000](http://localhost:8000)
 python manage.py test
 ```
 
-5 unit tests covering:
-- Basic balance calculation
-- Multi-expense balance aggregation
-- Settlement impact on balances
-- Full debt clearance via settlement
+Tests cover:
+- Balance calculation with multiple expenses
+- Settlement reducing and clearing debt
 - Debt simplification algorithm
 
 ---
@@ -70,30 +79,22 @@ python manage.py test
 
 ```
 splitwise-clone/
-├── config/              # Django project settings
-├── expenses/            # Main app
-│   ├── models.py        # Group, Expense, Settlement, ActivityLog
-│   ├── views.py         # All views
-│   ├── services.py      # Business logic (balance calculation, debt simplification)
-│   ├── forms.py         # Django forms
-│   ├── utils.py         # Helper functions (log_activity)
-│   └── templates/       # HTML templates
-├── manage.py
-└── requirements.txt
+├── config/          # Django settings, URLs, WSGI
+├── expenses/        # Main app
+│   ├── models.py    # Group, Expense, Settlement, ActivityLog
+│   ├── views.py     # All views
+│   ├── services.py  # Business logic (balance calculation, debt simplification)
+│   ├── forms.py     # Django forms
+│   ├── utils.py     # Helper functions (log_activity)
+│   └── tests.py     # Unit tests
+└── templates/       # HTML templates
 ```
 
 ---
 
-## 🧠 Key Design Decisions
+## 💡 Key Design Decisions
 
-- **Business logic in `services.py`** — kept separate from views for maintainability
-- **`GroupMembership` as a through model** — allows storing join date and future extensibility
-- **Greedy debt simplification** — minimizes number of transactions needed to settle all balances
-- **Hashed group passwords** — using Django's `make_password` / `check_password`
-
----
-
-## 👨‍💻 Author
-
-**Nariman Soltani**
-[GitHub](https://github.com/Nariman-Sltn)
+- **Business logic in `services.py`** — Separated from views for cleaner architecture
+- **Greedy debt simplification** — Minimizes transactions needed to settle all debts
+- **`GroupMembership` as a through-model** — Allows storing extra data like `joined_at`
+- **Hashed group passwords** — Using Django's `make_password`/`check_password`
